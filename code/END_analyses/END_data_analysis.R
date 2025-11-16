@@ -5,7 +5,7 @@ library(ggplot2)
 library(dplyr)
 library(R.utils)
 
-load("../data/app_rst/result.END.v5.RData")
+load("outputEND/result.END.RData")
 result <- result.END
 
 source("../SurvNPSA/R/npsa_summary.R")
