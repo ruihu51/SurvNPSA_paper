@@ -5,7 +5,7 @@ library(ggplot2)
 
 # load simulation outputs
 df_all <- data.frame()
-folder_path <- "../clusters/simulation_paper_1105/output.paper/res."
+folder_path <- "output.paper/res."
 for (n in c(500, 1000, 2500, 5000)){
     for (j in 501:1500){
         if (j%%200==0) cat(n, j, "\n")
@@ -23,7 +23,7 @@ for (n in c(500, 1000, 2500, 5000)){
 sim.s3.v3 <- df_all
 
 # load true values
-load("true.value.s3.final.RData")
+load("compute_data/true.value.s3.final.RData")
 # true bound for the true effect
 (theta.l.true <- true.value$theta.obs.true.1 -
         sqrt(true.value$g.gs.sq.true*true.value$a.as.sq.true))

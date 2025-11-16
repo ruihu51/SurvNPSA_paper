@@ -6,7 +6,7 @@ task.id = as.numeric(args[1])
 j <- task.id
 n <- as.numeric(args[2])
 
-load("seed.data.paper.RData")
+load("compute_data/seed.data.paper.RData")
 seed <- as.integer(seed.data[seed.data$n == n & seed.data$j == j, "seed"])
 
 set.seed(seed)
@@ -14,9 +14,9 @@ cat(n, j, seed, '\n')
 
 library(dplyr)
 
-source("estimate_nuisances.R")
-source("estimate_obs_components.R")
-source("npsa_utils.R")
+source("utils/estimate_nuisances.R")
+source("utils/estimate_obs_components.R")
+source("utils/npsa_utils.R")
 
 expit <- function(x) 1 / (1 + exp(-x))
 
@@ -28,7 +28,7 @@ zeta_w <- c(0.3, -0.1)
 alpha_u <- c(0.55, 0.5)
 beta_u <- c(-0.5, -1.75)
 
-load("true.value.s3.final.RData")
+load("compute_data/true.value.s3.final.RData")
 sens.out.true <-  true.value$g.gs.sq.true/true.value$e1.gs.sq.true
 sens.trt.true <- true.value$a.as.sq.true/true.value$as.sq.true
 
