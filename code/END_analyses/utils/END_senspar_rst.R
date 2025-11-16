@@ -5,8 +5,6 @@ V.g.matrix.list <- list()
 Gain.trt.vector.list <- list()
 V.a.vector.list <- list()
 
-load("../data/drop.index.END.RData")
-
 folder_path <- 'output.senspar/Fold'
 
 t_len <- 120
@@ -252,7 +250,7 @@ for (v in c(1,2,3,8)){
     cor.t.list[[v]] <- cor.t
 }
 
-round(range(colMeans(abs(cor.t.list[[8]][,1:12]))),2) # [0.34, 0.56]
+round(range(colMeans(abs(cor.t.list[[8]][,1:12]))),2)
 
 
 
