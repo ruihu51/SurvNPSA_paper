@@ -232,23 +232,20 @@ fig.senspar.plot.2 <- p1 + p2 + plot_layout(ncol = 2)
 ggsave(file="../figures/Fig2_END_senspar.eps", width = 260,
        height = 120, dpi=300, units="mm", device=cairo_ps, limitsize = FALSE, fig.senspar.plot.2)
 
-#################
-# empirical rho
-################
-# go to senspar_result_END.R
-
-# rho=0.52
-#################
+#########################
+# RV when empirical rho = 0.56
+# 0.56 from END_senspar_rst.R
+#########################
 set.seed(4262021)
 out$res.RV <- .report.RV(rv.times, result, rho=0.52, unif = TRUE, q.01 = 0, q.99 = 12)
 summary(out$res.RV)
 # Robustness Value Report
 # ------------------------
 #     t0 theta    RV  MIRV conf.level lower.b  rho
-# 12     0 0.061 0.015       0.95    TRUE 0.52
-# 60     0 0.004 0.000       0.95      NA 0.52
+# 12     0 0.056 0.014       0.95    TRUE 0.56
+# 60     0 0.003 0.000       0.95      NA 0.56
 
-(sp.l.pw <- 0.015*0.015/(1-0.015)) # 0.0002284264
+(sp.l.pw <- 0.014*0.014/(1-0.014)) # 0.000198783
 
 ### leave-one-out
 senspar$sens.df %>%
