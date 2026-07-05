@@ -250,7 +250,7 @@ CFsurvival.nuisance.options <- function(cross.fit = TRUE, V = ifelse(cross.fit, 
         cat("end:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
     } else {
         prop.fit <- SuperLearner(Y=A, X=W, newX=newW, family='binomial',
-                                 SL.library=SL.library, method = "method.NNloglik", obsWeights = rep(1, length(A)), verbose = verbose)
+                                 SL.library=SL.library, method = "method.NNLS", obsWeights = rep(1, length(A)), verbose = verbose)
         ret$prop.pred <- c(prop.fit$SL.predict)
     }
 
