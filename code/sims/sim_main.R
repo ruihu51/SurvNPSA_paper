@@ -97,6 +97,36 @@ g.SL.library <- list(c("SL.gam.custom", "All"))
 # generalized additive Cox regression model
 surv.SL.library <- list(c("survSL.gam.custom", "All"))
 
+# Propensity score SuperLearner library used for the additional simulation reported in Web Appendix E.
+# Original simple option:
+# g.SL.library <- list(c("SL.gam.custom", "All"))
+
+g.SL.library <- c(lapply(
+    c("SL.glm", "SL.step", "SL.ranger", "SL.gam.custom",
+      "SL.earth", "SL.xgboost", "SL.mean"),
+    function(alg) c(alg, "All")
+))
+
+# Survival SuperLearner library used for the additional simulation reported in Web Appendix E.
+# Original simple option:
+# surv.SL.library <- list(c("survSL.gam.custom", "All"))
+
+survSL.gam.cts9 <- function(time, event, X, newX, new.times, ...) {
+    survSL.gam(time = time,
+               event = event,
+               X = X,
+               newX = newX,
+               new.times = new.times,
+               cts.num = 9,
+               ...)
+}
+
+surv.SL.library <- c(lapply(
+    c("survSL.coxph", "survSL.loglogreg", "survSL.expreg", "survSL.weibreg",
+      "survSL.gam.cts9", "survSL.rfsrc", "survSL.km"),
+    function(alg) c(alg, "All")
+))
+
 nuisance.options = list(prop.SL.library = g.SL.library,
                         cens.SL.library = surv.SL.library,
                         event.SL.library = surv.SL.library,
@@ -119,7 +149,7 @@ result.sim <- .get.nuisances.est(time = time,
 # estimate observed components
 cat("start estimating target:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
 result.sim <- .get.obs.comps(time=time, event=event, treat=treat, result=result.sim,
-                             psi.type = "hybrid",
+                             psi.type = "hybrid", tau.type = "hybrid",
                              verbose = FALSE)
 
 join_df <- left_join(result.sim$obs.comps.df, senspar, by="time")
