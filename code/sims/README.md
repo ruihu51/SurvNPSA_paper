@@ -2,8 +2,6 @@
 
 This directory contains the R code and processed simulation results for the paper "Nonparametric Sensitivity Analysis for Unobserved Confounding with Survival Outcomes".
 
-Run all commands below from this directory.
-
 ------------------------------------------------------------------------
 
 ## Directory structure
