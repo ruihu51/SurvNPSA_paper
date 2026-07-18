@@ -32,15 +32,9 @@ Run all commands below from this directory.
 -   `utils/`\
     Helper functions used in the simulations.
 
-------------------------------------------------------------------------
-
-## R packages
-
-The simulation scripts use `dplyr`, `SuperLearner`, `survSuperLearner`, `mgcv`, and `mvtnorm`. The additional SuperLearner simulation also requires packages used by the candidate learners, including `ranger`, `earth`, `xgboost`, and `randomForestSRC`. The result-processing script uses `patchwork`, `tidyr`, `dplyr`, and `ggplot2`.
-
-------------------------------------------------------------------------
-
 ## Running simulation replications
+
+These scripts require the R packages loaded in `sim_main.R`, `sim_results.R`, and the helper functions in `utils/`.
 
 The supplied seed file contains repetitions `j = 501, ..., 1500` for sample sizes `n = 500, 1000, 2500, 5000`.
 
@@ -98,4 +92,4 @@ These commands generate:
 
 ## Reproducibility note
 
-The seed file fixes the simulated datasets used in the numerical experiments. Some nuisance estimators, especially GAM, SuperLearner, survival learners, and `xgboost`, may produce small numerical differences across R versions, package versions, operating systems, or BLAS/LAPACK libraries. Therefore, rerunning individual replications in a different computing environment may give results that differ slightly from the processed results provided here. The combined `.RData` files in `output.paper/` and `output.paper.superlearner/` are the processed simulation results used to generate the submitted figures.
+The seed file fixes the simulated datasets. Rerunning individual replications in a different R or package environment may give small numerical differences because nuisance-function estimation depends on the local computing environment. The figures are generated from the provided combined `.RData` files in `output.paper/` and `output.paper.superlearner/`.
