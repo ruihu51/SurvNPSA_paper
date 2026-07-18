@@ -160,11 +160,11 @@ df <- left_join(sim.res.paper, true_df, by = "times")
 
 check_time <- c(0.5,1,1.5,2)
 ##########################
-# Figures in Section 5
+# Figures in Web Appendix E
 #########################
 
 #########################################
-# Figure 1 (Bias and MSE) in Section 5
+# Figure 1 (Bias and MSE) in Web Appendix E
 ########################################
 summary.2.plot <- df %>%
     mutate(bias.l = effect.lower - theta.l.true,
@@ -265,7 +265,7 @@ ggsave(file=fig_sim_bias_file, width = 260,
 
 
 ##############################################
-# Figure 2 (Empirical coverage) in Section 5
+# Figure 2 (Empirical coverage) in Web Appendix E
 #############################################
 
 #########################
