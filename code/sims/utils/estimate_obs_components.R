@@ -182,12 +182,6 @@
         stop("`g.hats` must contain finite values for tau estimation.")
     }
 
-    g.trunc <- 1e-3
-    if (any(g.hats <= g.trunc | g.hats >= 1 - g.trunc)) {
-        message("Some propensity scores were too close to 0 or 1 and were truncated for tau estimation.")
-        g.hats <- pmin(pmax(g.hats, g.trunc), 1 - g.trunc)
-    }
-
     if.func.tau <- 2/(g.hats*(1-g.hats)) - ((A-g.hats)/(g.hats*(1-g.hats)))^2
     tau.est <- mean(if.func.tau)
     IF.vals.tau <- if.func.tau - tau.est

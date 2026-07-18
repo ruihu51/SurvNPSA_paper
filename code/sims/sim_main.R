@@ -1,16 +1,27 @@
 rm(list=ls())
 
 args = commandArgs(TRUE)
+if (length(args) < 2) {
+    stop("Usage: Rscript sim_main.R <j> <n> [gam|superlearner]")
+}
 task.id = as.numeric(args[1])
 
 j <- task.id
 n <- as.numeric(args[2])
+method <- ifelse(length(args) >= 3, tolower(args[3]), "gam")
+if (!(method %in% c("gam", "superlearner"))) {
+    stop("method must be either 'gam' or 'superlearner'.")
+}
 
 load("compute_data/seed.data.paper.RData")
 seed <- as.integer(seed.data[seed.data$n == n & seed.data$j == j, "seed"])
+if (length(seed) != 1 || is.na(seed)) {
+    stop("No matching seed found. Use j in 501,...,1500 and n in 500, 1000, 2500, or 5000.")
+}
 
 set.seed(seed)
 cat(n, j, seed, '\n')
+cat("method:", method, "\n")
 
 library(dplyr)
 
@@ -92,40 +103,88 @@ treat <- sim.data$A
 confounders <- sim.data$W
 fit.times <- c(seq(0.1,0.9,0.1),1,1.5,2)
 
-# generalized additive logistic regression model
-g.SL.library <- list(c("SL.gam.custom", "All"))
-# generalized additive Cox regression model
-surv.SL.library <- list(c("survSL.gam.custom", "All"))
+if (method == "gam") {
+    # generalized additive logistic regression model
+    g.SL.library <- list(c("SL.gam.custom", "All"))
+    # generalized additive Cox regression model
+    surv.SL.library <- list(c("survSL.gam.custom", "All"))
+} else {
+    SL.xgboost.new <- function(Y, X, newX, family, obsWeights, id,
+                               nrounds = 100,
+                               max_depth = 3,
+                               learning_rate = 0.1,
+                               subsample = 1,
+                               colsample_bytree = 1,
+                               min_child_weight = 1,
+                               nthread = 1,
+                               ...) {
+        requireNamespace("xgboost")
 
-# Propensity score SuperLearner library used for the additional simulation reported in Web Appendix E.
-# Original simple option:
-# g.SL.library <- list(c("SL.gam.custom", "All"))
+        X_mat <- data.matrix(X)
+        newX_mat <- data.matrix(newX)
 
-g.SL.library <- c(lapply(
-    c("SL.glm", "SL.step", "SL.ranger", "SL.gam.custom",
-      "SL.earth", "SL.xgboost", "SL.mean"),
-    function(alg) c(alg, "All")
-))
+        dtrain <- xgboost::xgb.DMatrix(
+            data = X_mat,
+            label = Y,
+            weight = obsWeights
+        )
 
-# Survival SuperLearner library used for the additional simulation reported in Web Appendix E.
-# Original simple option:
-# surv.SL.library <- list(c("survSL.gam.custom", "All"))
+        params <- list(
+            objective = if (family$family == "binomial") "binary:logistic" else "reg:squarederror",
+            max_depth = max_depth,
+            learning_rate = learning_rate,
+            subsample = subsample,
+            colsample_bytree = colsample_bytree,
+            min_child_weight = min_child_weight,
+            nthread = nthread
+        )
 
-survSL.gam.cts9 <- function(time, event, X, newX, new.times, ...) {
-    survSL.gam(time = time,
-               event = event,
-               X = X,
-               newX = newX,
-               new.times = new.times,
-               cts.num = 9,
-               ...)
+        fit <- xgboost::xgb.train(
+            params = params,
+            data = dtrain,
+            nrounds = nrounds,
+            verbose = 0
+        )
+
+        pred <- predict(fit, newdata = newX_mat)
+
+        fit_obj <- list(object = fit)
+        class(fit_obj) <- "SL.xgboost.new"
+
+        out <- list(pred = pred, fit = fit_obj)
+        class(out$fit) <- "SL.xgboost.new"
+        out
+    }
+
+    predict.SL.xgboost.new <- function(object, newdata, ...) {
+        newX_mat <- data.matrix(newdata)
+        predict(object$object, newdata = newX_mat)
+    }
+
+    # Propensity score SuperLearner library used for the additional simulation reported in Web Appendix E.
+    g.SL.library <- c(lapply(
+        c("SL.glm", "SL.step", "SL.ranger", "SL.gam.custom",
+          "SL.earth", "SL.xgboost.new", "SL.mean"),
+        function(alg) c(alg, "All")
+    ))
+
+    # Survival SuperLearner library used for the additional simulation reported in Web Appendix E.
+    survSL.gam.cts9 <- function(time, event, X, newX, new.times, ...) {
+        survSL.gam(time = time,
+                   event = event,
+                   X = X,
+                   newX = newX,
+                   new.times = new.times,
+                   cts.num = 9,
+                   ...)
+    }
+
+    surv.SL.library <- c(lapply(
+        c("survSL.coxph", "survSL.loglogreg", "survSL.expreg", "survSL.weibreg",
+          "survSL.gam.cts9", "survSL.rfsrc", "survSL.km"),
+        function(alg) c(alg, "All")
+    ))
 }
-
-surv.SL.library <- c(lapply(
-    c("survSL.coxph", "survSL.loglogreg", "survSL.expreg", "survSL.weibreg",
-      "survSL.gam.cts9", "survSL.rfsrc", "survSL.km"),
-    function(alg) c(alg, "All")
-))
 
 nuisance.options = list(prop.SL.library = g.SL.library,
                         cens.SL.library = surv.SL.library,
@@ -195,8 +254,9 @@ res_df$seed <- seed
 row.names(res_df) <- NULL
 
 # save outputs
-folder_path <- "output.paper/res."
-file_name <- paste0(folder_path, n, ".", j, ".RData")
+output.dir <- ifelse(method == "gam", "output.paper", "output.paper.superlearner")
+if (!dir.exists(output.dir)) dir.create(output.dir, recursive = TRUE)
+file_name <- file.path(output.dir, paste0("res.", n, ".", j, ".RData"))
 save(res_df, file=file_name)
 
 cat("Complete!")

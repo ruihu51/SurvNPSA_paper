@@ -4,23 +4,137 @@ library(dplyr)
 library(ggplot2)
 
 # load simulation outputs
-df_all <- data.frame()
-folder_path <- "output.paper/res."
-for (n in c(500, 1000, 2500, 5000)){
-    for (j in 501:1500){
-        if (j%%200==0) cat(n, j, "\n")
-        file_name <- paste0(folder_path, n, ".",  j, ".RData")
-        tryCatch({
-            load(file_name)
-            df_all <- rbind(df_all, res_df)
-        }, error = function(e) {
-            message("An error occurred: ", e$message)
-            message("An error occurred: ", file_name)
-        })
-
-    }
+args <- commandArgs(TRUE)
+method <- ifelse(length(args) >= 1, tolower(args[1]), "gam")
+if (!(method %in% c("gam", "superlearner", "both"))) {
+    stop("method must be either 'gam', 'superlearner', or 'both'.")
 }
-sim.s3.v3 <- df_all
+
+# The following code was used to combine individual simulation output files.
+# It is not run here because the combined simulation results are provided below.
+#
+# df_all <- data.frame()
+# folder_path <- ifelse(method == "gam",
+#                       "output.paper/res.",
+#                       "output.paper.superlearner/res.")
+# missing_files <- list()
+# for (n in c(500, 1000, 2500, 5000)){
+#     missing_j <- c()
+#     for (j in 501:1500){
+#         if (j%%200==0) cat(n, j, "\n")
+#         file_name <- paste0(folder_path, n, ".",  j, ".RData")
+#         if (!file.exists(file_name)) {
+#             missing_j <- c(missing_j, j)
+#             next
+#         }
+#         tryCatch({
+#             load(file_name)
+#             df_all <- rbind(df_all, res_df)
+#         }, error = function(e) {
+#             message("Problem loading file: ", file_name)
+#             message("Error: ", e$message)
+#         })
+#
+#     }
+#     missing_files[[as.character(n)]] <- missing_j
+# }
+# sim.res.paper <- df_all
+# if (method == "gam") {
+#     save(sim.res.paper, file = "output.paper/sim.res.paper.gam.RData")
+# } else {
+#     save(sim.res.paper, file = "output.paper.superlearner/sim.res.paper.SL.RData")
+# }
+
+if (method == "both") {
+    load("output.paper/sim.res.paper.gam.RData")
+    sim.res.paper.gam <- sim.res.paper
+    load("output.paper.superlearner/sim.res.paper.SL.RData")
+    sim.res.paper.SL <- sim.res.paper
+
+    check_time <- c(0.5, 1, 1.5, 2)
+
+    df_plot <- bind_rows(
+        sim.res.paper.gam %>% mutate(method = "Single"),
+        sim.res.paper.SL %>% mutate(method = "Ensemble")
+    ) %>%
+        filter(
+            times %in% check_time,
+            n %in% c(500, 1000, 2500, 5000),
+            j %in% 501:1500
+        )
+
+    summary.mcse.plot <- df_plot %>%
+        group_by(method, times, n) %>%
+        summarise(
+            mean.l = sd(effect.lower, na.rm = TRUE) / sqrt(sum(!is.na(effect.lower))),
+            mean.u = sd(effect.upper, na.rm = TRUE) / sqrt(sum(!is.na(effect.upper))),
+            .groups = "drop"
+        )
+
+    p.mcse <- summary.mcse.plot %>%
+        pivot_longer(
+            cols = c(mean.l, mean.u),
+            names_to = "estimator",
+            values_to = "mcse"
+        ) %>%
+        mutate(
+            estimator = recode(estimator,
+                               "mean.l" = "Lower",
+                               "mean.u" = "Upper"),
+            estimator = factor(estimator, levels = c("Lower", "Upper")),
+            n = factor(n, levels = c(500, 1000, 2500, 5000)),
+            method = factor(method, levels = c("Single", "Ensemble"))
+        ) %>%
+        ggplot(aes(x = n, y = mcse,
+                   color = estimator,
+                   linetype = method,
+                   shape = method,
+                   group = method)) +
+        geom_line(linewidth = 0.5) +
+        geom_point(size = 1.6) +
+        scale_color_manual(
+            values = c("Lower" = "firebrick3",
+                       "Upper" = "deepskyblue4"),
+            name = "Estimator"
+        ) +
+        scale_linetype_manual(
+            values = c("Single" = "solid",
+                       "Ensemble" = "dashed"),
+            name = "Method"
+        ) +
+        scale_shape_manual(
+            values = c("Single" = 16,
+                       "Ensemble" = 17),
+            name = "Method"
+        ) +
+        facet_grid(
+            rows = vars(estimator),
+            cols = vars(times),
+            labeller = labeller(times = function(x) paste0("t=", x))
+        ) +
+        labs(x = "Sample Size (n)", y = "Monte Carlo standard error") +
+        theme_bw() +
+        theme(
+            strip.text.x = element_text(size = 12),
+            strip.text.y = element_text(size = 12),
+            legend.text = element_text(size = 12),
+            legend.title = element_text(size = 12),
+            legend.position = "bottom",
+            panel.grid.minor = element_blank()
+        )
+
+    fig.plot.mcse <- p.mcse
+
+    ggsave(file="figures/Fig_sim_SL_sd.png", width = 260,
+           height = 160, dpi=300, units="mm", limitsize = FALSE, fig.plot.mcse)
+    quit(save = "no")
+}
+
+if (method == "superlearner") {
+    load("output.paper.superlearner/sim.res.paper.SL.RData")
+} else {
+    load("output.paper/sim.res.paper.gam.RData")
+}
 
 # load true values
 load("compute_data/true.value.s3.final.RData")
@@ -39,9 +153,9 @@ true_df$theta.obs.true <- true.value$theta.obs.true.1
 true_df$tau.true <- true.value$as.sq.true
 
 # combine simulation results and true parameters
-sim.s3.v3$times <- as.numeric(as.character(sim.s3.v3$times))
+sim.res.paper$times <- as.numeric(as.character(sim.res.paper$times))
 true_df$times <- as.numeric(as.character(true_df$times))
-df <- left_join(sim.s3.v3, true_df, by = "times")
+df <- left_join(sim.res.paper, true_df, by = "times")
 
 
 check_time <- c(0.5,1,1.5,2)
@@ -145,8 +259,9 @@ p3 <- summary.3.plot %>%
 
 fig.plot.bias <- p2/p3 + theme(legend.position = "bottom")
 
-ggsave(file="../figures/Fig_sim_bias.eps", width = 260,
-       height = 160, dpi=300, units="mm", device=cairo_ps, limitsize = FALSE, fig.plot.bias)
+fig_sim_bias_file <- ifelse(method == "gam", "figures/Fig_sim_bias.png", "figures/Fig_sim_bias_SL.png")
+ggsave(file=fig_sim_bias_file, width = 260,
+       height = 160, dpi=300, units="mm", limitsize = FALSE, fig.plot.bias)
 
 
 ##############################################
@@ -288,8 +403,8 @@ fig.plot.unifCI <- summary.u.plot %>%
           legend.text = element_text(size = 12))
 
 
-(fig.plot.pwCI / fig.plot.unifCI) +
-    plot_layout(heights = c(1, 1))
+# (fig.plot.pwCI / fig.plot.unifCI) +
+#     plot_layout(heights = c(1, 1))
 
 layout <- "
 AAAAAA
@@ -298,5 +413,6 @@ AAAAAA
 fig.plot.CI <- (fig.plot.pwCI / fig.plot.unifCI) +
     plot_layout(design = layout)
 
-ggsave(file="../figures/Fig_sim_CI.eps", width = 260,
-       height = 160, dpi=300, units="mm", device=cairo_ps, limitsize = FALSE, fig.plot.CI)
+fig_sim_CI_file <- ifelse(method == "gam", "figures/Fig_sim_CI.png", "figures/Fig_sim_CI_SL.png")
+ggsave(file=fig_sim_CI_file, width = 260,
+       height = 160, dpi=300, units="mm", limitsize = FALSE, fig.plot.CI)
