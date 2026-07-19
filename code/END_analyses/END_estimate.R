@@ -1,6 +1,10 @@
 rm(list=ls())
 
-load("data/prepped_data.Rdata")
+# Load the END analytic dataset. This file is not included in the
+# Supplementary Materials because the END data are subject to a
+# confidentiality/data use agreement. The loaded object should contain
+# Y, Delta, A.neck.dissection, and W.
+load("path/to/END_analytic_data.RData")
 
 source("utils/estimate_nuisances.R")
 source("utils/estimate_obs_components.R")

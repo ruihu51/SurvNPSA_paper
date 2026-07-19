@@ -38,10 +38,12 @@ The paths in these scripts are relative to this directory. The full local exampl
     -   This step computes `outputRHC/result.RHC.RData`, which is used by `RHC_data_analysis.R`.
 2.  Compute the product of sensitivity parameters.
     -   To run one repetition with j = 1 for the leave-5-out observed confounding (d=5), use `Rscript RHC_senspar_cluster.R 1 5 1`
+    -   This example runs one repetition only so that the workflow is fast. In the END analysis, this step was repeated 100 times for each `d`, and the repetitions were averaged when constructing the benchmarking summaries.
     -   When `SL.version = 1`, the propensity score library is `SL.gam` and `SL.mean`, and the survival and censoring libraries are `survSL.km` and `survSL.coxph`.
 3.  Combine the benchmarking repetition.
     -   Run `Rscript utils/RHC_senspar_rst.R`
-    -   This step computes `data/senspar.df.RHC.cluster.RData`, which is used by `RHC_data_analysis.R`.
+    -   This step combines the individual benchmarking output files and computes `data/senspar.df.RHC.cluster.RData`, which contains the product of the sensitivity parameters by `d` and time.
+    -   `RHC_data_analysis.R` uses this object to obtain effect bounds under the example leave-5-out benchmarking level.
     -   The intermediate combined files are saved in `data/senspar/`.
 4.  Load the fitted RHC example analysis object and benchmarking summaries. Process and visualize the results.
     -   Run `Rscript RHC_data_analysis.R`
