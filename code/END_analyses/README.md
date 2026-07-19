@@ -2,7 +2,7 @@
 
 This directory contains the R code used for the sensitivity analysis of the effect of Elective Neck Dissection (END) on mortality in the paper "Nonparametric Sensitivity Analysis for Unobserved Confounding with Survival Outcomes".
 
-The original END analytic dataset, fitted END analysis object, and precomputed benchmarking summaries are not included in the Supplementary Materials because they are based on data subject to a confidentiality/data use agreement. The scripts show how these objects were generated and used to obtain the results in Section 5 and Web Appendix G.
+The original END analytic dataset, fitted END analysis object, and precomputed benchmarking summaries are not included in the Supplementary Materials because they are based on data subject to a confidentiality/data use agreement. The scripts show how these objects were generated and used to obtain the results in Section 5 and Web Appendix G. A local example using public RHC data is provided in `example/` to illustrate the full workflow.
 
 ------------------------------------------------------------------------
 
