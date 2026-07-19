@@ -5,11 +5,19 @@ library(ggplot2)
 library(dplyr)
 library(R.utils)
 
+# This script was used to generate the END application results reported in
+# Section 5 and Web Appendix G. It requires the fitted END analysis object
+# computed from the original END analytic dataset. This object is not included
+# in the Supplementary Materials because the END data are subject to a
+# confidentiality/data use agreement. This script also uses the precomputed
+# benchmarking summaries from the END application.
+
+# Load the fitted END analysis object.
 load("outputEND/result.END.RData")
 result <- result.END
 
-source("../SurvNPSA/R/npsa_summary.R")
-source("../SurvNPSA/R/npsa_utils.R")
+source("utils/npsa_summary.R")
+source("utils/npsa_utils.R")
 
 set.seed(102025)
 plot.times <- 1:60
@@ -25,7 +33,8 @@ bounds.df$bounds.df %>%
 # ptwise.trans.lower theta.obs ptwise.trans.upper
 # 1              0.013     0.055              0.097
 
-load("../data/app_rst/senspar.df.END.cluster.RData")
+# Load the precomputed benchmarking summaries.
+load("data/senspar.df.END.cluster.RData")
 senspar.df <- senspar
 
 # under different levels of unobserved confounding
@@ -40,10 +49,12 @@ bounds.df.sens <- .report.bounds(plot.times, result,
 bounds.df$bounds.df <- rbind(bounds.df$bounds.df, bounds.df.sens$bounds.df)
 
 ############################################################################
-# Figure 3 (END) Estimated survival difference, effect bounds and inference
+# Figure 1 (END) Estimated survival difference, effect bounds and inference
 # under different levels of unobserved confounding
 ###########################################################################
 library(scales)
+
+dir.create("../figures", showWarnings = FALSE, recursive = TRUE)
 
 fig1.END.bounds <- bounds.df$bounds.df %>%
     mutate(
@@ -99,6 +110,61 @@ fig1.END.bounds <- bounds.df$bounds.df %>%
 
 ggsave(file="../figures/Fig1_END_bounds.eps", width = 260,
        height = 240, dpi=300, units="mm", device=cairo_ps, limitsize = FALSE, fig1.END.bounds)
+
+fig1.END.bounds.sharedy <- bounds.df$bounds.df %>%
+    mutate(
+        setting = case_when(
+            d == 0  ~ "No unobserved confounding",
+            d == 3  ~ "Weak confounding",
+            d == 8  ~ "Moderate confounding",
+            d == 13 ~ "Strong confounding"
+        ),
+        setting = factor(setting, levels = c(
+            "No unobserved confounding","Weak confounding",
+            "Moderate confounding","Strong confounding"
+        ))
+    ) %>%
+    ggplot(aes(x = times/12)) +
+    geom_step(aes(y = theta.obs,            linetype = "Observed Effect", color = "Observed Effect")) +
+    geom_step(aes(y = effect.lower,         linetype = "Effect Bounds",   color = "Effect Bounds")) +
+    geom_step(aes(y = effect.upper,         linetype = "Effect Bounds",   color = "Effect Bounds")) +
+    geom_step(aes(y = ptwise.trans.lower,   linetype = "Pointwise CI",    color = "Pointwise CI")) +
+    geom_step(aes(y = ptwise.trans.upper,   linetype = "Pointwise CI",    color = "Pointwise CI")) +
+    geom_step(aes(y = uniform.trans.lower,  linetype = "Uniform Bands",   color = "Uniform Bands")) +
+    geom_step(aes(y = uniform.trans.upper,  linetype = "Uniform Bands",   color = "Uniform Bands")) +
+    geom_hline(yintercept = 0, color = "grey50") +
+    scale_color_manual(values = c(
+        "Observed Effect" = "black",
+        "Effect Bounds"   = "red",
+        "Pointwise CI"    = "blue",
+        "Uniform Bands"   = "brown"
+    )) +
+    scale_linetype_manual(values = c(
+        "Observed Effect" = "solid",
+        "Effect Bounds"   = "dashed",
+        "Pointwise CI"    = "dotdash",
+        "Uniform Bands"   = "longdash"
+    )) +
+    scale_y_continuous(
+        breaks = breaks_width(0.1),
+        minor_breaks = NULL
+    ) +
+    labs(linetype = "Type", color = "Type", x = "Years post-diagnosis",
+         y = "Survival difference (END - No END)") +
+    theme_bw() +
+    theme(
+        legend.position = "bottom",
+        text = element_text(size = 12),
+        legend.text = element_text(size = 12),
+        legend.key.width = unit(0.8, "cm"),
+        legend.title = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey85")
+    ) +
+    facet_wrap(~setting)
+
+ggsave(file="../figures/Fig1_END_bounds_sharedy.eps", width = 260,
+       height = 240, dpi=300, units="mm", device=cairo_ps, limitsize = FALSE, fig1.END.bounds.sharedy)
 
 
 ####################
@@ -157,7 +223,7 @@ unif.RV <- round(out$res.RV$unif.RV,3)
 ##########################
 
 ###################################
-# Fig D1 (leave-d-out confounding)
+# Figure G6 (leave-d-out confounding)
 ##################################
 sens.df.q <- senspar$sens.df %>%
     mutate(sens.par = C.Y.sq * C.A.sq) %>%
@@ -237,7 +303,7 @@ ggsave(file="../figures/Fig2_END_senspar.eps", width = 260,
 # 0.56 from END_senspar_rst.R
 #########################
 set.seed(4262021)
-out$res.RV <- .report.RV(rv.times, result, rho=0.52, unif = TRUE, q.01 = 0, q.99 = 12)
+out$res.RV <- .report.RV(rv.times, result, rho=0.56, unif = TRUE, q.01 = 0, q.99 = 12)
 summary(out$res.RV)
 # Robustness Value Report
 # ------------------------
@@ -253,40 +319,3 @@ senspar$sens.df %>%
     filter(t==12 & d==1) %>%
     mutate(sig.point=sens.par>sp.point,
            sig.l.pw=sens.par>sp.l.pw)
-
-
-load("../data/END/prepped_data.Rdata")
-W$neck.dissection <- NULL
-
-set.seed(4262021)
-
-time <- Y
-event <- Delta
-treat <- A.neck.dissection
-confounders <- W
-names(confounders)
-
-var_list <- list(
-    1,
-    c(2, 3, 4, 5),
-    6,
-    c(7,8),
-    c(9,10,11),
-    12, 13, 14, 15,
-    c(16,17),
-    18,
-    c(19,20,21,22,23),
-    c(24,25),
-    c(26,27),
-    c(28,29),
-    30
-)
-
-var_list[c(1,2,6)]
-names(confounders)[1] #"age"
-names(confounders)[2] #"surgery"
-names(confounders)[12] #"high.t.stage"
-
-
-
-

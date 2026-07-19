@@ -1,36 +1,46 @@
 # Data analysis in the `SurvNPSA` paper
 
-This directory contains the R code to reproduce the sensitivity analysis for the effect of Elective Neck Dissection (END) on mortality in the paper "Nonparametric Sensitivity Analysis for Unobserved Confounding with Survival Outcomes".
+This directory contains the R code used for the sensitivity analysis of the effect of Elective Neck Dissection (END) on mortality in the paper "Nonparametric Sensitivity Analysis for Unobserved Confounding with Survival Outcomes".
+
+The original END analytic dataset and fitted END analysis object are not included in the Supplementary Materials because they are based on data subject to a confidentiality/data use agreement. The scripts show how the fitted END analysis object and precomputed benchmarking summaries were generated and used to obtain the results in Section 5 and Web Appendix G.
 
 ------------------------------------------------------------------------
 
 ## Directory structure
 
 -   `END_data_analysis.R`\
-    Main script for generating Fig 3 and all other analyses reported in Section 6 and Web Appendix D of the paper.
+    Main script for generating the END application results reported in Section 5 and Web Appendix G of the paper.
 
 -   `END_estimate.R`\
-    Scripts used to compute the cross-fitted one-step estimators of the observed components with nuisance functions estimated using SuperLearner and survSuperLearner.
+    Script used to compute the cross-fitted one-step estimators of the observed components with nuisance functions estimated using SuperLearner and survSuperLearner.
 
 -   `END_senspar_cluster.R`\
-    Scripts used to compute the sensitivity parameters using benchmarking based on `d` observed covariates. utils/END_senspar_rst.R computes the product of the sensitivity parameters.
+    Script used to compute the sensitivity parameters using benchmarking based on `d` observed covariates. `utils/END_senspar_rst.R` combines the benchmarking repetitions and computes the product of the sensitivity parameters.
 
 -   `utils/`\
-    Additional helper functions. The most up-to-date versions of these functions are provided in the SurvNPSA R package.
+    Additional helper functions.
+
+-   `example/`\
+    A small local example using public RHC data. This example uses 1000 observations and `fit.times = 1:30` so that the full workflow can be run locally.
 
 ------------------------------------------------------------------------
 
-To reproduce Section 6 and Web Appendix D, run the following csteps in sequence:
+For researchers with access to the END data, the paths in these scripts are relative to this directory. The following steps show how the END analysis objects and results were generated:
 
 1.  Compute the estimators.
     -   Run `END_estimate.R`
+    -   This step computes the fitted END analysis object used by `END_data_analysis.R`.
 2.  Compute the product of sensitivity parameters for each `d`.
     -   To run a single repetition with j = 1 for the leave-8-out observed confounding (d=8), use `Rscript END_senspar_cluster.R 1 8 1`
 
-        -   Since this step only uses observed confounding as a reference to interpret the plausibility of the robustness values, and need to be repeated 100 times for each `d`, we recommend use simple nuisance estimators such as `SL.gam` and `SL.coxph` for simplicity.
+        -   Since this step only uses observed confounding as a reference to interpret the plausibility of the robustness values, and needs to be repeated 100 times for each `d`, a simpler candidate library is used for this step. When `SL.version = 1`, the propensity score library is `SL.gam` and `SL.mean`, and the survival and censoring libraries are `survSL.km` and `survSL.coxph`.
 
-    -   We recommend submit the task to a Slurm cluster using `sbatch —array 1-100%100 submit_sim.sh 8 1`
-3.  Load the results in Step 1 and 2. Process and visualize the results.
+    -   On a Slurm cluster, use `sbatch --array=1-100%100 submit_senspar.sh 8 1`
+    -   This step produces the individual benchmarking repetition outputs used in Step 3.
+3.  Combine the benchmarking repetitions.
+    -   Run `Rscript utils/END_senspar_rst.R`
+    -   This step computes the precomputed benchmarking summaries used by `END_data_analysis.R`.
+4.  Load the fitted END analysis object and precomputed benchmarking summaries. Process and visualize the results.
+    -   Run `END_data_analysis.R`
     -   Effect bounds estimates and inference.
-
     -   Robustness values and interpretation.

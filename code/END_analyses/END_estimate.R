@@ -2,8 +2,8 @@ rm(list=ls())
 
 load("data/prepped_data.Rdata")
 
-source("estimate_nuisances.R")
-source("estimate_obs_components.R")
+source("utils/estimate_nuisances.R")
+source("utils/estimate_obs_components.R")
 
 W$neck.dissection <- NULL
 
@@ -89,6 +89,8 @@ result.END <- .get.nuisances.est(time = time,
                                  verbose = TRUE)
 
 folder_path <- "outputEND/result.END"
+
+dir.create("outputEND", showWarnings = FALSE, recursive = TRUE)
 
 file_name <- paste0(folder_path, ".RData")
 

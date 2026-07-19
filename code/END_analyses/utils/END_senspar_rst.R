@@ -182,7 +182,9 @@ Gain.trt.df <- do.call(rbind, lapply(c(1,2,3,8,13), function(i) {
 
 sens.df <- merge(Gain.out.df, Gain.trt.df, by = c("j", "d"))
 
-save(sens.df, file = "../data/senspar/sens.df.RData")
+dir.create("data/senspar", showWarnings = FALSE, recursive = TRUE)
+
+save(sens.df, file = "data/senspar/sens.df.RData")
 
 sens.df.mean <- sens.df %>%
     mutate(sens.par = C.Y.sq * C.A.sq) %>%
@@ -190,11 +192,11 @@ sens.df.mean <- sens.df %>%
     summarize(sens.par = mean(sens.par)) %>%
     ungroup()
 
-save(sens.df.mean, file = "../data/senspar/sens.df.mean.RData")
+save(sens.df.mean, file = "data/senspar/sens.df.mean.RData")
 
 ## RMST
-# load("../data/senspar/V.h.matrix.gamma.list.RData")
-# load("../data/senspar/Gain.out.phi.matrix.list.RData")
+# load("data/senspar/V.h.matrix.gamma.list.RData")
+# load("data/senspar/Gain.out.phi.matrix.list.RData")
 Gain.out.phi.df <- data.frame(value = numeric(), t = numeric(), j = integer(), d = integer())
 for(i in c(1,2,3,8,13)) {
 
@@ -210,7 +212,7 @@ for(i in c(1,2,3,8,13)) {
 
 sens.rmst.df <- merge(Gain.out.phi.df, Gain.trt.df, by = c("j", "d"))
 
-save(sens.rmst.df, file = "../data/senspar/sens.rmst.df.RData")
+save(sens.rmst.df, file = "data/senspar/sens.rmst.df.RData")
 
 sens.rmst.df.mean <- sens.rmst.df %>%
     mutate(sens.par = C.Y.sq * C.A.sq) %>%
@@ -218,14 +220,14 @@ sens.rmst.df.mean <- sens.rmst.df %>%
     summarize(sens.par = mean(sens.par)) %>%
     ungroup()
 
-save(sens.rmst.df.mean, file = "../data/senspar/sens.rmst.df.mean.RData")
+save(sens.rmst.df.mean, file = "data/senspar/sens.rmst.df.mean.RData")
 
 senspar <- list()
 senspar$sens.df <- sens.df
 senspar$sens.df.mean <- sens.df.mean
 senspar$sens.rmst.df <- sens.rmst.df
 senspar$sens.rmst.df.mean <- sens.rmst.df.mean
-save(senspar, file = "../data/app_rst/senspar.df.END.cluster.RData")
+save(senspar, file = "data/senspar.df.END.cluster.RData")
 
 ###################
 # Empirical rho
@@ -251,6 +253,3 @@ for (v in c(1,2,3,8)){
 }
 
 round(range(colMeans(abs(cor.t.list[[8]][,1:12]))),2)
-
-
-

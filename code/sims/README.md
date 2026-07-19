@@ -32,8 +32,6 @@ This directory contains the R code and processed simulation results for the pape
 
 ## Running simulation replications
 
-These scripts require the R packages loaded in `sim_main.R`, `sim_results.R`, and the helper functions in `utils/`.
-
 The supplied seed file contains repetitions `j = 501, ..., 1500` for sample sizes `n = 500, 1000, 2500, 5000`.
 
 To run a single replication from the original simulation:
@@ -67,7 +65,7 @@ Outputs from the original simulation are saved in `output.paper/`. Outputs from 
 
 ## Generating figures
 
-The combined simulation results used to generate the submitted figures are provided as:
+The combined simulation results used to generate the paper figures are provided as:
 
 -   `output.paper/sim.res.paper.gam.RData`
 -   `output.paper.superlearner/sim.res.paper.SL.RData`
